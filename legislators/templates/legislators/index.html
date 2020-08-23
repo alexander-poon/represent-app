@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block title %}Your Legislators{% endblock %}
+
+{% block content %}
+    {% if senator is not None %}
+        <p>Your senator is <a href="/legislators/{{ senator.pk }}">{{ senator.full_name }}</a>.</p>
+    {% endif %}
+    {% if rep is not None %}
+        <p>Your representative is <a href="/legislators/{{ senator.pk }}">{{ rep.full_name }}</a>.</p>
+    {% endif %}
+{% endblock %}

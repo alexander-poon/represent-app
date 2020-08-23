@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+<title>{{ legislator.full_name }}</title>
+
+{% block title %}{{ legislator.full_name }}{% endblock %}
+
+<p>hello</p>
+
+{% block bills %}
+    {% for b in bills %}
+        <li>{{ b.bill_id }}</li>
+    {% endfor %}
+{% endblock %}
