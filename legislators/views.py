@@ -8,17 +8,17 @@ from legislators.models import Legislator
 def index(request):
 
 	context = {
-		'rep': Legislator.objects.get(leg_id=request.user.rep),
-		'senator': Legislator.objects.get(leg_id=request.user.senator)
+		'rep': Legislator.objects.get(legislator_id=request.user.rep),
+		'senator': Legislator.objects.get(legislator_id=request.user.senator)
 	}
 
 	return render(request, 'legislators/index.html', context)
 
 
 @login_required
-def detail(request, pk):
+def detail(request, legislator_id):
 
-	leg = Legislator.objects.get(pk=pk)
+	leg = Legislator.objects.get(legislator_id=legislator_id)
 
 	context = {
 		'legislator': leg,

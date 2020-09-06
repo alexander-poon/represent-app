@@ -1,24 +1,28 @@
 import pandas as pd
 from django.db import migrations
-from pyopenstates import search_legislators
 
 
-def pull_legislators(apps, schema_editor):
-
+def create_legislators(apps, schema_editor):
     fields = [
-        'leg_id', 'full_name', 'first_name', 'middle_name', 'last_name', 'suffix',
-        'active', 'state', 'chamber', 'district', 'party', 'photo_url'
+        'legislator_id', 'name', 'given_name', 'family_name', 'state', 'chamber',
+        'district', 'party', 'image'
     ]
 
-    # TODO: check on missing legislator IDs
-    legislators = pd.DataFrame(search_legislators(state='tn')) \
-        .loc[:, fields] \
-        .dropna(subset=['district'])
+    legislators = pd.read_csv('https://data.openstates.org/people/current/tn.csv') \
+        .rename(columns={
+            'id': 'legislator_id',
+            'current_district': 'district',
+            'current_chamber': 'chamber',
+            'current_party': 'party',
+        }) \
+        .assign(state='Tennessee') \
+        .loc[:, fields]
 
     Legislator = apps.get_model('legislators', 'Legislator')
 
-    for leg in legislators.to_dict(orient='records'):
-        Legislator.objects.create(**leg)
+    Legislator.objects.bulk_create(
+        [Legislator(**leg) for leg in legislators.to_dict(orient='records')]
+    )
 
 
 class Migration(migrations.Migration):
@@ -28,5 +32,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(pull_legislators)
+        migrations.RunPython(create_legislators)
     ]

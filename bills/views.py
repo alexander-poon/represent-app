@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
@@ -12,22 +13,28 @@ from constituents.models import Vote
 def index(request):
 
 	constituent_id = request.user.constituent_id
+	votes = Vote.objects.filter(
+		Q(name__contains='HB') | Q(companion_name='nan'),
+		constituent_id=constituent_id
+	)
 
 	# subjects = Constituent.objects.get(constituent_id=constituent_id).subjects
 	subjects = [i.id for i in Subject.objects.filter(subject__in=['Education'])]
-
-	support = Vote.objects.filter(constituent_id=constituent_id, position='support')
-	oppose = Vote.objects.filter(constituent_id=constituent_id, position='oppose')
-	indifferent = Vote.objects.filter(constituent_id=constituent_id, position='indifferent')
-	interest = Bill.objects.filter(subjects__in=subjects, session=111)
+	interest = Bill.objects.filter(
+		Q(name__contains='HB') | Q(companion_name='nan'),
+		subjects__in=subjects,
+		session=111,
+	)
 
 	# Don't suggest bills constituent has already voted on
-	for b in (support | oppose | indifferent):
-		interest = interest.exclude(state=b.state, session=b.session, bill_id=b.bill_id)
+	for v in votes:
+		interest = interest \
+			.exclude(state=v.state, session=v.session, name=v.name) \
+			.exclude(state=v.state, session=v.session, companion_name=v.name)
 
 	context = {
-		'support': support,
-		'oppose': oppose,
+		'support': votes.filter(position='support'),
+		'oppose': votes.filter(position='oppose'),
 		'interest': interest[:10]
 	}
 
@@ -35,14 +42,14 @@ def index(request):
 
 
 @login_required
-def detail(request, state, session, bill_id):
-	bill = get_object_or_404(Bill, state=state, session=session, bill_id=bill_id)
+def detail(request, state, session, name):
+	b = get_object_or_404(Bill, state=state, session=session, name=name)
 
 	try:
 		p = Vote.objects.get(
 			state=state,
 			session=session,
-			bill_id=bill_id,
+			name=name,
 			constituent=request.user.constituent_id
 		).position
 	except Vote.DoesNotExist:
@@ -55,12 +62,12 @@ def detail(request, state, session, bill_id):
 	else:
 		position = 'You have not expressed a position on this bill.'
 
-	actions = bill.get_actions()
+	actions = b.get_actions()
 
 	context = {
-		'bill': bill,
+		'bill': b,
 		'position': position,
-		'support': bill.count_votes(position='support'),
+		'support': b.count_votes(position='support'),
 		'house_actions': actions.filter(actor='lower'),
 		'senate_actions': actions.filter(actor='upper')
 	}
@@ -69,27 +76,65 @@ def detail(request, state, session, bill_id):
 
 
 @login_required
-def vote(request, state, session, bill_id):
+def vote(request, state, session, name):
+	constituent_id = request.user.constituent_id
+	bill_id = Bill.objects.get(state=state, session=session, name=name)
 
+	# Find companion bill (SB to HB) which may or may not exist
+	try:
+		companion_name = Bill.objects.get(
+			state=state,
+			session=session,
+			name=name
+		).companion_name
+	except Bill.DoesNotExist:
+		companion_name = None
+
+	# Register vote for bill
 	try:
 		v = Vote.objects.get(
 			state=state,
 			session=session,
-			bill_id=bill_id,
-			constituent_id=request.user.constituent_id
+			name=name,
+			constituent_id=constituent_id
 		)
 	except Vote.DoesNotExist:
 		if request.method == 'POST':
 			f = VoteForm(request.POST)
 			if f.is_valid():
 				v = f.save(commit=False)
-				v.constituent_id = request.user.constituent_id
+				v.constituent_id = constituent_id
+				v.bill_id = bill_id
 				v.state = state
 				v.session = session
-				v.bill_id = bill_id
+				v.name = name
+				v.companion_name = companion_name
 				v.save()
 	else:
 		v.position = request.POST['position']
 		v.save()
 
-	return HttpResponseRedirect(reverse('bills:detail', args=(state, session, bill_id,)))
+	# Register vote for companion bill if exists
+	if companion_name is not None:
+		try:
+			c = Vote.objects.get(
+				state=state,
+				session=session,
+				name=companion_name,
+				constituent_id=constituent_id
+			)
+		except Vote.DoesNotExist:
+			Vote.objects.create(
+				bill_id=bill_id,
+				state=state,
+				session=session,
+				name=companion_name,
+				companion_name=name,
+				constituent_id=constituent_id,
+				position=request.POST['position']
+			)
+		else:
+			c.position = request.POST['position']
+			c.save()
+
+	return HttpResponseRedirect(reverse('bills:detail', args=(state, session, name,)))

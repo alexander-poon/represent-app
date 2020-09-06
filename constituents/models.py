@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -42,9 +41,11 @@ class Constituent(AbstractUser):
 
 class Vote(models.Model):
 	constituent = models.ForeignKey('Constituent', on_delete=models.CASCADE)
-	state = models.CharField(max_length=2, choices=[('tn', 'Tennessee')])
+	bill_id = models.ForeignKey('bills.Bill', on_delete=models.CASCADE, related_name='vote_bill')
+	state = models.CharField(max_length=9, choices=[('Tennessee', 'Tennessee')])
 	session = models.IntegerField()
-	bill_id = models.CharField(max_length=7)
+	name = models.CharField(max_length=7)
+	companion_name = models.CharField(max_length=7, null=True)
 	position = models.CharField(
 		max_length=11,
 		choices=[('support', 'Support'), ('oppose', 'Oppose'), ('indifferent', 'Indifferent'), ('', '')],
@@ -54,7 +55,7 @@ class Vote(models.Model):
 	class Meta:
 		constraints = [
 			models.UniqueConstraint(
-				fields=['constituent_id', 'state', 'session', 'bill_id'],
+				fields=['constituent_id', 'state', 'session', 'name'],
 				name='constituent_vote'
 			)
 		]

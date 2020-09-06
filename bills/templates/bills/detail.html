@@ -1,18 +1,19 @@
 {% extends 'base.html' %}
 
-<title>{{ bill.bill_id }}</title>
+<title>{{ bill.name }}</title>
 
-{% block title %}{{ bill.bill_id }}{% endblock %}
+{% block title %}{{ bill.name }}{% if bill.companion_name %}/{{ bill.companion_name }}{% endif %}{% endblock %}
 
 {% block content %}
 
+    <h2>{{ bill.name }}{% if bill.companion_name %}/{{ bill.companion_name }}{% endif %}</h2>
     <p>{{ bill.title }}</p>
     <p>{{ bill.session }}</p>
     <p>{{ bill.subjects }}</p>
 
     {% if user.is_authenticated %}
         <p><strong>What is your position on this bill?</strong></p>
-        <form action="{% url 'bills:vote' bill.state bill.session bill.bill_id %}" method="POST">
+        <form action="{% url 'bills:vote' bill.state bill.session bill.name %}" method="POST">
         {% csrf_token %}
         <select name="position">
             <option value=""></option>
@@ -29,20 +30,20 @@
     {% endif %}
 
     <p>{{ support }} constituent{{ support|pluralize }} support this bill.</p>
-    <strong>House Actions on {{ bill.bill_id }}</strong>
+    <strong>House Actions on {{ bill.name }}</strong>
     <p>
     {% for a in house_actions %}
         <li>{{ a.action }}</li>
     {% empty %}
-        <li>No House actions on {{ bill.bill_id }}</li>
+        <li>No House actions on {{ bill.name }}</li>
     {% endfor %}
     </p>
-    <strong>Senate Actions on {{ bill.bill_id }}</strong>
+    <strong>Senate Actions on {{ bill.name }}</strong>
     <p>
         {% for a in senate_actions %}
             <li>{{ a.action }}</li>
         {% empty %}
-            <li>No Senate actions on {{ bill.bill_id }}</li>
+            <li>No Senate actions on {{ bill.name }}</li>
         {% endfor %}
     </p>
 {% endblock %}

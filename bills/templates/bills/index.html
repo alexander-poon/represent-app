@@ -3,28 +3,28 @@
 <title>{% block title %}Your Bills{% endblock %}</title>
 
 {% block content %}
-<p>
-    <strong>Bills You Support</strong>
-    {% for s in support %}
-        <li><a href="/bills/{{ s.state }}/{{ s.session }}/{{ s.bill_id }}">{{ s.bill_id }}</a></li>
-    {% empty %}
-        <li>You support no bills.</li>
-    {% endfor %}
-</p>
-<p>
-    <strong>Bills You Oppose</strong>
-    {% for o in oppose %}
-        <li><a href="/bills/{{ o.state }}/{{ o.session }}/{{ o.bill_id }}">{{ o.bill_id }}</a></li>
-    {% empty %}
-        <li>You oppose no bills.</li>
-    {% endfor %}
-</p>
-<p>
-    <strong>Bills You May Be Interested In</strong>
-    {% for i in interest %}
-        <li><a href="/bills/{{ i.state }}/{{ i.session }}/{{ i.bill_id }}">{{ i.bill_id }}</a>: {{ i.title }}</li>
-    {% empty %}
-        <li>As you vote on more bills we'll identify bills you may be interested in.</li>
-    {% endfor %}
-</p>
+    <p>
+        <strong>Bills You Support</strong>
+        {% for s in support %}
+            <li><a href="/bills/{{ s.state }}/{{ s.session }}/{{ s.name }}">{{ s.name }}</a>/<a href="/bills/{{ s.state }}/{{ s.session }}/{{ s.name }}">{{ s.companion_name }}</a></li>
+        {% empty %}
+            <li>You support no bills.</li>
+        {% endfor %}
+    </p>
+    <p>
+        <strong>Bills You Oppose</strong>
+        {% for o in oppose %}
+            <li><a href="/bills/{{ o.state }}/{{ o.session }}/{{ o.name }}">{{ o.name }}</a>/<a href="/bills/{{ o.state }}/{{ o.session }}/{{ o.name }}">{{ o.companion_name }}</a></li>
+        {% empty %}
+            <li>You oppose no bills.</li>
+        {% endfor %}
+    </p>
+    <p>
+        <strong>Bills You May Be Interested In</strong>
+        {% for i in interest %}
+            <li><a href="/bills/{{ i.state }}/{{ i.session }}/{{ i.name }}">{{ i.name }}</a>/<a href="/bills/{{ i.state }}/{{ i.session }}/{{ i.name }}">{{ i.companion_name }}</a>: {{ i.title }}</li>
+        {% empty %}
+            <li>As you vote on bills we'll identify new bills you may be interested in.</li>
+        {% endfor %}
+    </p>
 {% endblock %}

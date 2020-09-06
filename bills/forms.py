@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Vote
+from constituents.models import Vote
 
 
 class VoteForm(forms.ModelForm):
